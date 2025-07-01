@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Layout from '../../components/layout/Layout';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const ProfilePage: React.FC = () => {
@@ -59,21 +58,20 @@ export const ProfilePage: React.FC = () => {
 
   if (!user) {
     return (
-      <Layout>
-        <div className="container mx-auto px-4 py-8">
+      <div className="page-wrapper">
+        <div className="content-narrow">
           <div className="text-center">
             <p className="text-gray-600">로그인이 필요합니다.</p>
           </div>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">내 프로필</h1>
+    <div className="page-wrapper">
+      <div className="content-narrow">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">내 프로필</h1>
 
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
@@ -272,8 +270,7 @@ export const ProfilePage: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
       </div>
-    </Layout>
+    </div>
   );
 };

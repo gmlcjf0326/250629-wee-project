@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
+import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 interface Newsletter {
   id: number;
@@ -14,8 +17,29 @@ interface Newsletter {
 const NewsletterPage: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState('2024');
   const [email, setEmail] = useState('');
+  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [latestNewsletter, setLatestNewsletter] = useState<Newsletter | null>(null);
 
-  const newsletters: Newsletter[] = [
+  useEffect(() => {
+    fetchNewsletters();
+  }, [selectedYear]);
+
+  const fetchNewsletters = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/newsletters', {
+        params: { year: selectedYear === 'all' ? undefined : selectedYear }
+      });
+      setNewsletters(response.data.data || []);
+      
+      // Find latest newsletter
+      const latest = response.data.data.find((n: Newsletter) => n.isLatest) || response.data.data[0];
+      setLatestNewsletter(latest);
+    } catch (error) {
+      console.error('Failed to fetch newsletters:', error);
+      // Use mock data for now
+      const mockNewsletters: Newsletter[] = [
     {
       id: 1,
       title: 'Wee 프로젝트 소식지',
@@ -102,6 +126,35 @@ const NewsletterPage: React.FC = () => {
       downloads: 654,
     },
   ];
+      setNewsletters(mockNewsletters);
+      setLatestNewsletter(mockNewsletters[0]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = async (newsletter: Newsletter) => {
+    try {
+      const response = await api.post(`/newsletters/${newsletter.id}/download`);
+      const { downloadUrl, fileName } = response.data.data;
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('다운로드가 시작되었습니다.');
+      
+      // Refresh to update download count
+      fetchNewsletters();
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('다운로드에 실패했습니다.');
+    }
+  };
 
   const years = ['2024', '2023', '2022', '2021'];
   
@@ -118,8 +171,8 @@ const NewsletterPage: React.FC = () => {
   };
 
   return (
-    <div className="container-custom py-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="page-wrapper">
+      <div className="content-wide">
         {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">뉴스레터</h1>
@@ -129,41 +182,46 @@ const NewsletterPage: React.FC = () => {
         </div>
 
         {/* Latest Issue Hero */}
-        <div className="bg-gradient-to-r from-wee-main to-wee-blue rounded-3xl shadow-xl p-8 mb-12 text-white">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="badge badge-warning">최신호</span>
-                <span className="text-white/80">{newsletters[0].issue}</span>
+        {latestNewsletter && (
+          <div className="bg-gradient-to-r from-wee-main to-wee-blue rounded-3xl shadow-xl p-8 mb-12 text-white">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="badge badge-warning">최신호</span>
+                  <span className="text-white/80">{latestNewsletter.issue}</span>
+                </div>
+                <h2 className="text-3xl font-bold mb-4">{latestNewsletter.title}</h2>
+                <div className="space-y-2 mb-6">
+                  {latestNewsletter.highlights.map((highlight, index) => (
+                    <div key={index} className="flex items-center">
+                      <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
+                      <span>{highlight}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => handleDownload(latestNewsletter)}
+                    className="bg-white text-wee-main px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
+                  >
+                    <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    PDF 다운로드
+                  </button>
+                  <button className="bg-white/20 text-white px-6 py-3 rounded-full font-medium hover:bg-white/30 transition-colors">
+                    온라인으로 보기
+                  </button>
+                </div>
               </div>
-              <h2 className="text-3xl font-bold mb-4">{newsletters[0].title}</h2>
-              <div className="space-y-2 mb-6">
-                {newsletters[0].highlights.map((highlight, index) => (
-                  <div key={index} className="flex items-center">
-                    <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                    <span>{highlight}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <button className="bg-white text-wee-main px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors">
-                  <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  PDF 다운로드
-                </button>
-                <button className="bg-white/20 text-white px-6 py-3 rounded-full font-medium hover:bg-white/30 transition-colors">
-                  온라인으로 보기
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="text-[200px] animate-pulse">
-                {newsletters[0].coverImage}
+              <div className="flex items-center justify-center">
+                <div className="text-[200px] animate-pulse">
+                  {latestNewsletter.coverImage}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Year Filter */}
         <div className="flex justify-center mb-8">
@@ -184,8 +242,16 @@ const NewsletterPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wee-main"></div>
+          </div>
+        )}
+
         {/* Newsletter Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {filteredNewsletters.map(newsletter => (
             <div key={newsletter.id} className="bg-white rounded-2xl shadow-soft hover:shadow-lg transition-all">
               {/* Cover */}
@@ -218,7 +284,10 @@ const NewsletterPage: React.FC = () => {
                 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <button className="btn-primary btn-sm flex-1">
+                  <button 
+                    onClick={() => handleDownload(newsletter)}
+                    className="btn-primary btn-sm flex-1"
+                  >
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -231,7 +300,8 @@ const NewsletterPage: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Newsletter Subscription */}
         <div className="bg-gradient-to-r from-wee-light to-blue-50 rounded-3xl p-8 mb-8">

@@ -1,18 +1,19 @@
 import { Router } from 'express';
-import { createContact, getContacts, getContactById, updateContactStatus } from '../controllers/contact.controller';
+import { contactController } from '../controllers/contact.controller';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
-// POST /api/contact - Create new contact/inquiry
-router.post('/', createContact);
+// Public routes
+router.post('/', contactController.createContact);
 
-// GET /api/contact - Get all contacts (admin only - to be implemented)
-router.get('/', getContacts);
-
-// GET /api/contact/:id - Get contact by ID
-router.get('/:id', getContactById);
-
-// PATCH /api/contact/:id/status - Update contact status
-router.patch('/:id/status', updateContactStatus);
+// Protected routes (require authentication)
+router.get('/', authenticate, contactController.getContacts);
+router.get('/stats', authenticate, contactController.getContactStats);
+router.get('/:id', authenticate, contactController.getContact);
+router.put('/:id', authenticate, contactController.updateContact);
+router.post('/:id/reply', authenticate, contactController.replyToContact);
+router.post('/:id/assign', authenticate, contactController.assignContact);
+router.delete('/:id', authenticate, contactController.deleteContact);
 
 export default router;

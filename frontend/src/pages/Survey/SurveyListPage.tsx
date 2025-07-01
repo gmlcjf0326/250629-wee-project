@@ -17,16 +17,16 @@ interface Survey {
 export const SurveyListPage: React.FC = () => {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active' | 'closed'>('active');
+  const [filter, setFilter] = useState<'all' | 'active' | 'closed'>('all');
 
   useEffect(() => {
     fetchSurveys();
-  }, [filter]);
+  }, []); // Remove filter dependency - fetch all surveys once
 
   const fetchSurveys = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/surveys?status=${filter === 'all' ? '' : filter}`);
+      const response = await api.get('/surveys'); // Always fetch all surveys
       setSurveys(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch surveys:', error);
@@ -106,8 +106,8 @@ export const SurveyListPage: React.FC = () => {
   });
 
   return (
-    <div className="container-custom py-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="page-wrapper">
+      <div className="content-wide">
         {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">설문조사</h1>
@@ -120,9 +120,9 @@ export const SurveyListPage: React.FC = () => {
         <div className="flex justify-center mb-8">
           <div className="bg-white rounded-full shadow-soft p-1 inline-flex">
             {[
-              { key: 'active', label: '진행중', count: surveys.filter(s => s.status === 'active').length },
               { key: 'all', label: '전체', count: surveys.length },
-              { key: 'closed', label: '종료된 조사', count: surveys.filter(s => s.status === 'closed').length },
+              { key: 'active', label: '진행중', count: surveys.filter(s => s.status === 'active' && !isExpired(s.end_date)).length },
+              { key: 'closed', label: '종료된 조사', count: surveys.filter(s => s.status === 'closed' || isExpired(s.end_date)).length },
             ].map(tab => (
               <button
                 key={tab.key}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
+import { noticeAPI } from '../../api/notices';
 import { motion } from 'framer-motion';
 
 interface Notice {
@@ -28,7 +28,28 @@ const AnnouncementPage: React.FC = () => {
   const fetchNotices = async () => {
     try {
       setLoading(true);
-      // Mock data for now
+      const response = await noticeAPI.getNotices({
+        page: currentPage,
+        limit: noticesPerPage,
+        sort: 'latest'
+      });
+      
+      // Map the API response to match the component's interface
+      const mappedNotices = response.notices.map(notice => ({
+        id: notice.id,
+        title: notice.title,
+        content: notice.content,
+        category: notice.category,
+        author: notice.author || '관리자',
+        view_count: notice.views || 0,
+        is_important: notice.is_important || false,
+        created_at: notice.created_at || notice.posted_date || new Date().toISOString(),
+      }));
+      
+      setNotices(mappedNotices);
+    } catch (error) {
+      console.error('Failed to fetch notices:', error);
+      // Fallback to mock data if API fails
       const mockNotices: Notice[] = [
         {
           id: '1',
@@ -83,8 +104,6 @@ const AnnouncementPage: React.FC = () => {
       ];
       
       setNotices(mockNotices);
-    } catch (error) {
-      console.error('Failed to fetch notices:', error);
     } finally {
       setLoading(false);
     }
@@ -120,8 +139,8 @@ const AnnouncementPage: React.FC = () => {
   const totalPages = Math.ceil(filteredNotices.length / noticesPerPage);
 
   return (
-    <div className="container-custom py-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="page-wrapper">
+      <div className="content-container">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">공지사항</h1>

@@ -13,7 +13,10 @@
     "start": "node dist/server.js",
     "start:simple": "node server-simple.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:supabase": "npx ts-node src/test-supabase.ts"
+    "test:supabase": "npx ts-node src/test-supabase.ts",
+    "seed:resources": "npx ts-node scripts/seed-resources.ts",
+    "setup:admin": "npx ts-node scripts/setup-admin.ts",
+    "create:admin": "npx ts-node scripts/create-admin.ts"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +35,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "express-rate-limit": "^7.5.1",
+    "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",

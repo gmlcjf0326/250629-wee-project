@@ -1,12 +1,77 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import api from '../../api/client';
+
+interface DashboardStats {
+  users: {
+    total: number;
+    newThisMonth: number;
+    activeToday: number;
+  };
+  notices: {
+    total: number;
+    published: number;
+    draft: number;
+    viewsToday: number;
+  };
+  surveys: {
+    total: number;
+    active: number;
+    completed: number;
+    responsesToday: number;
+  };
+  resources: {
+    total: number;
+    totalSize: number;
+    downloadsToday: number;
+  };
+  contacts: {
+    total: number;
+    pending: number;
+    avgResponseTime: number;
+    todayCount: number;
+  };
+}
+
+interface ActivityLog {
+  id: string;
+  type: 'user' | 'notice' | 'survey' | 'resource' | 'contact';
+  action: string;
+  description: string;
+  user?: string;
+  timestamp: string;
+}
 
 const AdminDashboard: React.FC = () => {
-  const stats = [
+  // Fetch dashboard stats
+  const { data: dashboardStats, isLoading: statsLoading } = useQuery<{ data: DashboardStats }>({
+    queryKey: ['admin-dashboard-stats'],
+    queryFn: async () => {
+      const response = await api.get('/stats/dashboard');
+      return response.data;
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Fetch activity logs
+  const { data: activityLogs } = useQuery<{ data: ActivityLog[] }>({
+    queryKey: ['admin-activity-logs'],
+    queryFn: async () => {
+      const response = await api.get('/stats/activities?limit=10');
+      return response.data;
+    },
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  const stats = dashboardStats?.data;
+
+  const statCards = [
     {
       title: '전체 사용자',
-      value: '1,234',
-      change: '+12%',
+      value: stats?.users.total || 0,
+      change: `신규 ${stats?.users.newThisMonth || 0}명`,
+      subtext: `오늘 활동 ${stats?.users.activeToday || 0}명`,
       color: 'from-blue-500 to-blue-600',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -16,8 +81,9 @@ const AdminDashboard: React.FC = () => {
     },
     {
       title: '공지사항',
-      value: '56',
-      change: '+3',
+      value: stats?.notices.total || 0,
+      change: `게시 ${stats?.notices.published || 0}개`,
+      subtext: `오늘 조회 ${stats?.notices.viewsToday || 0}회`,
       color: 'from-green-500 to-green-600',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,8 +93,9 @@ const AdminDashboard: React.FC = () => {
     },
     {
       title: '설문조사',
-      value: '12',
-      change: '진행중 3개',
+      value: stats?.surveys.total || 0,
+      change: `진행중 ${stats?.surveys.active || 0}개`,
+      subtext: `오늘 응답 ${stats?.surveys.responsesToday || 0}건`,
       color: 'from-purple-500 to-purple-600',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,31 +104,66 @@ const AdminDashboard: React.FC = () => {
       ),
     },
     {
-      title: '자료실',
-      value: '89',
-      change: '342MB',
+      title: '문의사항',
+      value: stats?.contacts.total || 0,
+      change: `대기 ${stats?.contacts.pending || 0}건`,
+      subtext: `오늘 접수 ${stats?.contacts.todayCount || 0}건`,
       color: 'from-orange-500 to-orange-600',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       ),
     },
   ];
 
-  const recentActivities = [
-    { type: 'user', message: '새로운 사용자가 가입했습니다.', time: '5분 전' },
-    { type: 'notice', message: '공지사항이 등록되었습니다.', time: '1시간 전' },
-    { type: 'survey', message: '설문조사가 완료되었습니다.', time: '2시간 전' },
-    { type: 'file', message: '새로운 파일이 업로드되었습니다.', time: '3시간 전' },
-  ];
-
   const quickLinks = [
     { title: '공지사항 작성', path: '/admin/notices/new', icon: '📝' },
     { title: '설문조사 생성', path: '/admin/surveys/new', icon: '📊' },
-    { title: '사용자 관리', path: '/admin/users', icon: '👥' },
-    { title: '자료 업로드', path: '/admin/resources/new', icon: '📁' },
+    { title: '문의 관리', path: '/admin/contacts', icon: '📧' },
+    { title: '자료 업로드', path: '/admin/resources', icon: '📁' },
   ];
+
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diff = now.getTime() - time.getTime();
+    
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return '방금 전';
+    if (minutes < 60) return `${minutes}분 전`;
+    if (hours < 24) return `${hours}시간 전`;
+    if (days < 7) return `${days}일 전`;
+    return time.toLocaleDateString();
+  };
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'user':
+        return '👤';
+      case 'notice':
+        return '📢';
+      case 'survey':
+        return '📊';
+      case 'resource':
+        return '📁';
+      case 'contact':
+        return '📧';
+      default:
+        return '📌';
+    }
+  };
+
+  if (statsLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wee-main"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -70,7 +172,7 @@ const AdminDashboard: React.FC = () => {
         
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
+          {statCards.map((stat, index) => (
             <div key={index} className="bg-white rounded-2xl shadow-soft p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center text-white`}>
@@ -79,7 +181,8 @@ const AdminDashboard: React.FC = () => {
                 <span className="text-sm text-gray-500">{stat.change}</span>
               </div>
               <h3 className="text-gray-600 text-sm mb-1">{stat.title}</h3>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-2xl font-bold text-gray-900">{stat.value.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mt-1">{stat.subtext}</p>
             </div>
           ))}
         </div>
@@ -106,16 +209,25 @@ const AdminDashboard: React.FC = () => {
           {/* Recent Activities */}
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-soft p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 활동</h3>
-            <div className="space-y-3">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
-                  <div className="w-2 h-2 bg-wee-main rounded-full mt-2"></div>
-                  <div className="flex-1">
-                    <p className="text-gray-700">{activity.message}</p>
-                    <p className="text-xs text-gray-500">{activity.time}</p>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {activityLogs?.data?.length ? (
+                activityLogs.data.map((activity) => (
+                  <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+                    <div className="text-lg">{getActivityIcon(activity.type)}</div>
+                    <div className="flex-1">
+                      <p className="text-gray-700">{activity.description}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-gray-500">{formatTimeAgo(activity.timestamp)}</p>
+                        {activity.user && (
+                          <p className="text-xs text-gray-500">• {activity.user}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-8">활동 내역이 없습니다.</p>
+              )}
             </div>
           </div>
         </div>

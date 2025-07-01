@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
+import api from '../../api/client';
+import { debounce } from 'lodash';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,6 +29,8 @@ export const RegisterPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+  const [checkingEmail, setCheckingEmail] = useState(false);
 
   const checkPasswordStrength = (password: string) => {
     let strength = 0;
@@ -38,6 +42,45 @@ export const RegisterPage: React.FC = () => {
     setPasswordStrength(strength);
   };
 
+  // Email availability check
+  const checkEmailAvailability = useCallback(
+    debounce(async (email: string) => {
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setEmailAvailable(null);
+        return;
+      }
+
+      setCheckingEmail(true);
+      try {
+        const response = await api.get('/auth/check-email', {
+          params: { email }
+        });
+        setEmailAvailable(response.data.data.available);
+        if (!response.data.data.available) {
+          setErrors(prev => ({ ...prev, email: '이미 사용중인 이메일입니다.' }));
+        } else {
+          setErrors(prev => {
+            const { email, ...rest } = prev;
+            return rest;
+          });
+        }
+      } catch (error) {
+        console.error('Email check error:', error);
+        setEmailAvailable(null);
+      } finally {
+        setCheckingEmail(false);
+      }
+    }, 500),
+    []
+  );
+
+  // Real-time validation
+  useEffect(() => {
+    if (formData.email && currentStep === 1) {
+      checkEmailAvailability(formData.email);
+    }
+  }, [formData.email, currentStep, checkEmailAvailability]);
+
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -46,11 +89,15 @@ export const RegisterPage: React.FC = () => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
         newErrors.email = '올바른 이메일 형식이 아닙니다.';
+      } else if (emailAvailable === false) {
+        newErrors.email = '이미 사용중인 이메일입니다.';
       }
 
       // Password validation
       if (formData.password.length < 8) {
         newErrors.password = '비밀번호는 8자 이상이어야 합니다.';
+      } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/.test(formData.password)) {
+        newErrors.password = '비밀번호는 영문 대소문자, 숫자, 특수문자(@$!%*?&)를 각각 하나 이상 포함해야 합니다.';
       }
 
       if (formData.password !== formData.confirmPassword) {
@@ -60,11 +107,16 @@ export const RegisterPage: React.FC = () => {
       // Name validation
       if (formData.fullName.trim().length < 2) {
         newErrors.fullName = '이름은 2자 이상이어야 합니다.';
+      } else if (!/^[가-힯성례제천a-zA-Z\s]+$/.test(formData.fullName)) {
+        newErrors.fullName = '이름은 한글 또는 영문만 입력 가능합니다.';
       }
 
       // Phone validation
-      if (formData.phone && !/^[0-9-]+$/.test(formData.phone)) {
-        newErrors.phone = '올바른 전화번호 형식이 아닙니다.';
+      if (formData.phone) {
+        const phoneNumber = formData.phone.replace(/-/g, '');
+        if (!/^(010|011|016|017|018|019)\d{7,8}$/.test(phoneNumber)) {
+          newErrors.phone = '올바른 휴대폰 번호 형식이 아닙니다.';
+        }
       }
 
       if (!formData.position) {
@@ -104,6 +156,12 @@ export const RegisterPage: React.FC = () => {
     if (name === 'password') {
       checkPasswordStrength(value);
     }
+
+    // Check email availability
+    if (name === 'email') {
+      setEmailAvailable(null);
+      checkEmailAvailability(value);
+    }
   };
 
   const handleNextStep = () => {
@@ -125,20 +183,26 @@ export const RegisterPage: React.FC = () => {
 
     setIsLoading(true);
 
+    const registrationData = {
+      email: formData.email,
+      password: formData.password,
+      fullName: formData.fullName,
+      phone: formData.phone || undefined,
+      organization: formData.organization || undefined,
+      position: formData.position,
+      purpose: formData.purpose,
+    };
+    
+    console.log('Submitting registration data:', registrationData);
+
     try {
-      await register({
-        email: formData.email,
-        password: formData.password,
-        fullName: formData.fullName,
-        phone: formData.phone || undefined,
-        organization: formData.organization || undefined,
-        position: formData.position,
-        purpose: formData.purpose,
-      });
+      await register(registrationData);
       navigate(from, { replace: true });
     } catch (error: any) {
+      console.error('Registration error:', error);
+      console.error('Error response:', error.response?.data);
       setErrors({
-        submit: error.response?.data?.message || '회원가입에 실패했습니다.',
+        submit: error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || '회원가입에 실패했습니다.',
       });
     } finally {
       setIsLoading(false);
@@ -258,23 +322,40 @@ export const RegisterPage: React.FC = () => {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-6"
                 >
-                  <div>
+                  <div className="relative">
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                       이메일 주소 <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg shadow-soft focus:ring-2 focus:ring-wee-main focus:outline-none transition-all ${
-                        errors.email ? 'ring-2 ring-red-500' : ''
-                      }`}
-                      placeholder="example@email.com"
-                    />
+                    <div className="relative">
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        value={formData.email}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-3 pr-12 rounded-lg shadow-soft focus:ring-2 focus:ring-wee-main focus:outline-none transition-all ${
+                          errors.email ? 'ring-2 ring-red-500' : ''
+                        }`}
+                        placeholder="example@email.com"
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        {checkingEmail && (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-wee-main"></div>
+                        )}
+                        {!checkingEmail && emailAvailable === true && (
+                          <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                        {!checkingEmail && emailAvailable === false && (
+                          <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
                     {errors.email && (
                       <motion.p
                         initial={{ opacity: 0 }}
@@ -301,8 +382,13 @@ export const RegisterPage: React.FC = () => {
                       className={`w-full px-4 py-3 rounded-lg shadow-soft focus:ring-2 focus:ring-wee-main focus:outline-none transition-all ${
                         errors.password ? 'ring-2 ring-red-500' : ''
                       }`}
-                      placeholder="8자 이상, 영문 대소문자, 숫자, 특수문자 포함"
+                      placeholder="8자 이상, 영문 대소문자, 숫자, 특수문자(@$!%*?&) 각 1개 이상"
                     />
+                    {!errors.password && formData.password && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        비밀번호는 8자 이상이며 영문 대소문자, 숫자, 특수문자(@$!%*?&)를 각각 1개 이상 포함해야 합니다.
+                      </p>
+                    )}
                     {formData.password && (
                       <div className="mt-2">
                         <div className="flex items-center justify-between mb-1">
@@ -413,7 +499,7 @@ export const RegisterPage: React.FC = () => {
                       className={`w-full px-4 py-3 rounded-lg shadow-soft focus:ring-2 focus:ring-wee-main focus:outline-none transition-all ${
                         errors.phone ? 'ring-2 ring-red-500' : ''
                       }`}
-                      placeholder="010-0000-0000"
+                      placeholder="010-1234-5678"
                     />
                     {errors.phone && (
                       <motion.p

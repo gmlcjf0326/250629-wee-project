@@ -17,6 +17,13 @@ export const PieChart: React.FC<PieChartProps> = ({
   height = 300,
   options = {},
 }) => {
+  // Handle undefined or empty data
+  if (!labels || !data || labels.length === 0 || data.length === 0) {
+    return <div style={{ height: `${height}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p>No data available</p>
+    </div>;
+  }
+  
   const chartData = {
     labels,
     datasets: [

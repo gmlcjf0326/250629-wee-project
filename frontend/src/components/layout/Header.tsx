@@ -88,7 +88,7 @@ const Header: React.FC = () => {
     <header className="bg-white/95 backdrop-blur-lg sticky top-0 z-50 shadow-soft">
       {/* Top Bar */}
       <div className="bg-gradient-to-r from-wee-main to-wee-blue text-white py-2">
-        <div className="container-custom">
+        <div className="content-wide">
           <div className="flex justify-end items-center text-sm space-x-4">
             <span>한국청소년정책연구원</span>
             <span>|</span>
@@ -141,7 +141,7 @@ const Header: React.FC = () => {
         </div>
       </div>
       
-      <div className="container-custom">
+      <div className="content-wide">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center group">

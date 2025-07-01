@@ -22,6 +22,13 @@ export const BarChart: React.FC<BarChartProps> = ({
   height = 300,
   options = {},
 }) => {
+  // Handle undefined or empty data
+  if (!labels || !datasets || labels.length === 0 || datasets.length === 0) {
+    return <div style={{ height: `${height}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p>No data available</p>
+    </div>;
+  }
+  
   const chartData = {
     labels,
     datasets: datasets.map((dataset, index) => ({

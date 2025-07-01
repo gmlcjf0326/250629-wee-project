@@ -1,12 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
 @import url('https://cdn.jsdelivr.net/font-kopub/1.0/kopubdotum.min.css');
+@import './styles/animations.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import custom animations */
-@import './styles/animations.css';
 
 /* Base Styles */
 @layer base {
@@ -84,9 +82,32 @@
 
 /* Component Styles */
 @layer components {
-  /* Container - Made wider */
+  /* Container - Standardized widths for consistent layout */
   .container-custom {
-    @apply container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1400px];
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Standard content widths */
+  .content-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .content-narrow {
+    @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .content-wide {
+    @apply max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Page wrapper for consistent spacing */
+  .page-wrapper {
+    @apply min-h-screen bg-gray-50 py-8 lg:py-12;
+  }
+  
+  /* Main content area */
+  .main-content {
+    @apply flex-1 w-full;
   }
 
   /* Navigation Link Styles */

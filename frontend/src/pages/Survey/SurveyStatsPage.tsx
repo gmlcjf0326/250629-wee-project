@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import Layout from '../../components/layout/Layout';
 import { motion } from 'framer-motion';
 
 interface Survey {
@@ -243,32 +242,32 @@ export const SurveyStatsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="container-custom py-8">
+      <div className="page-wrapper">
+        <div className="content-wide">
           <div className="text-center py-12">
             <div className="spinner mx-auto mb-4"></div>
             <p className="text-gray-500">통계를 불러오는 중...</p>
           </div>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   if (!survey) {
     return (
-      <Layout>
-        <div className="container-custom py-8">
+      <div className="page-wrapper">
+        <div className="content-wide">
           <div className="text-center py-12">
             <p className="text-gray-500">설문조사를 찾을 수 없습니다.</p>
           </div>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div className="container-custom py-8">
+    <div className="page-wrapper">
+      <div className="content-wide">
         <div className="max-w-4xl mx-auto">
           {/* Breadcrumb */}
           <nav className="mb-6">
@@ -414,6 +413,6 @@ export const SurveyStatsPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 };

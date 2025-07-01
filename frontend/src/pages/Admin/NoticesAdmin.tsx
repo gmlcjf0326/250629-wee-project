@@ -1,56 +1,84 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-
-interface Notice {
-  id: number;
-  title: string;
-  content: string;
-  author: string;
-  category: string;
-  views: number;
-  createdAt: string;
-  isImportant: boolean;
-  status: 'published' | 'draft';
-}
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { noticeApi } from '../../api/notices';
+import type { Notice, NoticeQuery } from '../../api/notices';
+import { toast } from 'react-hot-toast';
 
 const NoticesAdmin: React.FC = () => {
-  const [notices] = useState<Notice[]>([
+  const queryClient = useQueryClient();
+  const [query, setQuery] = useState<NoticeQuery>({
+    page: 1,
+    limit: 10,
+    category: '',
+    search: '',
+    sort: 'latest'
+  });
+  const [selectedNotices, setSelectedNotices] = useState<string[]>([]);
+
+  // Fetch notices
+  const { data, isLoading, error } = useQuery(
+    ['notices', query],
+    () => noticeApi.getNotices(query),
     {
-      id: 1,
+      keepPreviousData: true,
+      onError: (err: any) => {
+        console.error('Failed to fetch notices:', err);
+      }
+    }
+  );
+
+  // Delete mutation
+  const deleteMutation = useMutation(
+    (ids: string[]) => noticeApi.deleteMultipleNotices(ids),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('notices');
+        setSelectedNotices([]);
+        toast.success('공지사항이 삭제되었습니다.');
+      },
+      onError: () => {
+        toast.error('삭제 중 오류가 발생했습니다.');
+      }
+    }
+  );
+
+  // Mock data for fallback
+  const mockNotices: Notice[] = [
+    {
+      id: '1',
       title: '2024년 상반기 교육 프로그램 안내',
       content: '2024년 상반기 교육 프로그램을 안내드립니다.',
       author: '관리자',
       category: '교육',
       views: 234,
-      createdAt: '2024-01-15',
-      isImportant: true,
-      status: 'published',
+      posted_date: '2024-01-15',
+      is_important: true,
     },
     {
-      id: 2,
+      id: '2',
       title: 'Wee 클래스 운영 매뉴얼 개정',
       content: 'Wee 클래스 운영 매뉴얼이 개정되었습니다.',
       author: '관리자',
       category: '운영',
       views: 156,
-      createdAt: '2024-01-10',
-      isImportant: true,
-      status: 'published',
+      posted_date: '2024-01-10',
+      is_important: true,
     },
     {
-      id: 3,
+      id: '3',
       title: '신규 상담사 모집 공고',
       content: '2024년 신규 상담사를 모집합니다.',
       author: '인사팀',
       category: '채용',
       views: 89,
-      createdAt: '2024-01-05',
-      isImportant: false,
-      status: 'published',
+      posted_date: '2024-01-05',
+      is_important: false,
     },
-  ]);
+  ];
 
-  const [selectedNotices, setSelectedNotices] = useState<number[]>([]);
+  const notices = data?.notices || mockNotices;
+  const totalPages = data?.totalPages || 1;
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -60,7 +88,7 @@ const NoticesAdmin: React.FC = () => {
     }
   };
 
-  const handleSelect = (id: number) => {
+  const handleSelect = (id: string) => {
     setSelectedNotices(prev =>
       prev.includes(id)
         ? prev.filter(nId => nId !== id)
@@ -71,10 +99,25 @@ const NoticesAdmin: React.FC = () => {
   const handleDelete = () => {
     if (selectedNotices.length === 0) return;
     if (confirm(`선택한 ${selectedNotices.length}개의 공지사항을 삭제하시겠습니까?`)) {
-      // Delete logic here
-      setSelectedNotices([]);
+      deleteMutation.mutate(selectedNotices);
     }
   };
+
+  const handleSearch = () => {
+    setQuery({ ...query, page: 1 });
+  };
+
+  const handlePageChange = (page: number) => {
+    setQuery({ ...query, page });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-500">로딩 중...</div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -94,24 +137,40 @@ const NoticesAdmin: React.FC = () => {
       {/* Filters */}
       <div className="bg-white rounded-2xl shadow-soft p-4 mb-6">
         <div className="flex flex-wrap gap-4">
-          <select className="form-input">
-            <option>전체 카테고리</option>
-            <option>교육</option>
-            <option>운영</option>
-            <option>채용</option>
-            <option>기타</option>
+          <select 
+            className="form-input"
+            value={query.category || ''}
+            onChange={(e) => setQuery({ ...query, category: e.target.value })}
+          >
+            <option value="">전체 카테고리</option>
+            <option value="교육">교육</option>
+            <option value="운영">운영</option>
+            <option value="채용">채용</option>
+            <option value="기타">기타</option>
           </select>
-          <select className="form-input">
-            <option>전체 상태</option>
-            <option>게시됨</option>
-            <option>임시저장</option>
+          <select 
+            className="form-input"
+            value={query.sort || 'latest'}
+            onChange={(e) => setQuery({ ...query, sort: e.target.value as any })}
+          >
+            <option value="latest">최신순</option>
+            <option value="oldest">오래된순</option>
+            <option value="views">조회순</option>
           </select>
           <input
             type="text"
             placeholder="검색어를 입력하세요"
             className="form-input flex-1"
+            value={query.search || ''}
+            onChange={(e) => setQuery({ ...query, search: e.target.value })}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
           />
-          <button className="btn-secondary">검색</button>
+          <button 
+            className="btn-secondary"
+            onClick={handleSearch}
+          >
+            검색
+          </button>
         </div>
       </div>
 
@@ -179,7 +238,7 @@ const NoticesAdmin: React.FC = () => {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center">
-                    {notice.isImportant && (
+                    {notice.is_important && (
                       <span className="badge badge-danger mr-2">중요</span>
                     )}
                     <span className="text-gray-900 font-medium">{notice.title}</span>
@@ -195,11 +254,11 @@ const NoticesAdmin: React.FC = () => {
                   {notice.views}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">
-                  {notice.createdAt}
+                  {notice.posted_date || notice.created_at}
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`badge ${notice.status === 'published' ? 'badge-success' : 'badge-warning'}`}>
-                    {notice.status === 'published' ? '게시됨' : '임시저장'}
+                  <span className="badge badge-success">
+                    게시됨
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right text-sm font-medium">
@@ -220,19 +279,39 @@ const NoticesAdmin: React.FC = () => {
       </div>
 
       {/* Pagination */}
-      <div className="mt-4 flex justify-center">
-        <nav className="flex space-x-2">
-          <button className="px-3 py-2 text-gray-500 bg-white rounded-lg hover:bg-gray-100">
-            이전
-          </button>
-          <button className="px-3 py-2 bg-wee-main text-white rounded-lg">1</button>
-          <button className="px-3 py-2 text-gray-700 bg-white rounded-lg hover:bg-gray-100">2</button>
-          <button className="px-3 py-2 text-gray-700 bg-white rounded-lg hover:bg-gray-100">3</button>
-          <button className="px-3 py-2 text-gray-500 bg-white rounded-lg hover:bg-gray-100">
-            다음
-          </button>
-        </nav>
-      </div>
+      {totalPages > 1 && (
+        <div className="mt-4 flex justify-center">
+          <nav className="flex space-x-2">
+            <button 
+              className="px-3 py-2 text-gray-500 bg-white rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              onClick={() => handlePageChange(query.page! - 1)}
+              disabled={query.page === 1}
+            >
+              이전
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button 
+                key={page}
+                className={`px-3 py-2 rounded-lg ${
+                  page === query.page 
+                    ? 'bg-wee-main text-white' 
+                    : 'text-gray-700 bg-white hover:bg-gray-100'
+                }`}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
+            ))}
+            <button 
+              className="px-3 py-2 text-gray-500 bg-white rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              onClick={() => handlePageChange(query.page! + 1)}
+              disabled={query.page === totalPages}
+            >
+              다음
+            </button>
+          </nav>
+        </div>
+      )}
     </div>
   );
 };

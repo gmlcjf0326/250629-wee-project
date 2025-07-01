@@ -4,11 +4,14 @@ import infoRoutes from './info.routes';
 import contactRoutes from './contact.routes';
 import serviceRoutes from './service.routes';
 import noticeRoutes from './notice.routes';
-import resourceRoutes from './resources';
+import resourceRoutes from './resource.routes';
 import surveyRoutes from './survey.routes';
 import uploadRoutes from './upload.routes';
+import fileRoutes from './file.routes';
 import statsRoutes from './stats.routes';
 import scraperRoutes from './scraper.routes';
+import communityRoutes from './community.routes';
+import newsletterRoutes from './newsletter.routes';
 
 const router = Router();
 
@@ -21,8 +24,11 @@ router.use('/notices', noticeRoutes);
 router.use('/resources', resourceRoutes);
 router.use('/surveys', surveyRoutes);
 router.use('/uploads', uploadRoutes);
+router.use('/files', fileRoutes);
 router.use('/stats', statsRoutes);
 router.use('/scraper', scraperRoutes);
+router.use('/community', communityRoutes);
+router.use('/newsletters', newsletterRoutes);
 
 // API root
 router.get('/', (req, res) => {
@@ -38,8 +44,11 @@ router.get('/', (req, res) => {
       resources: '/api/resources',
       surveys: '/api/surveys',
       uploads: '/api/uploads',
+      files: '/api/files',
       stats: '/api/stats',
-      scraper: '/api/scraper'
+      scraper: '/api/scraper',
+      community: '/api/community',
+      newsletters: '/api/newsletters'
     }
   });
 });

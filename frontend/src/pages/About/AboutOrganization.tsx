@@ -139,8 +139,8 @@ const AboutOrganization: React.FC = () => {
   };
 
   return (
-    <div className="container-custom py-8 bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-6xl mx-auto">
+    <div className="page-wrapper bg-gradient-to-b from-gray-50 to-white">
+      <div className="content-wide">
         {/* Page Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}

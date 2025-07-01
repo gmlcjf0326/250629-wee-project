@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth.middleware';
+import { authenticate } from '../middleware/auth.middleware';
 import { checkPermission } from '../middleware/permission.middleware';
 import { WeeScraper } from '../scrapers/wee-scraper';
 
@@ -7,7 +7,7 @@ const router = Router();
 
 // Scrape Wee website content (Admin only)
 router.post('/scrape/wee', 
-  authenticateToken, 
+  authenticate, 
   checkPermission('manage_content'),
   async (req, res) => {
     try {
@@ -32,7 +32,7 @@ router.post('/scrape/wee',
 
 // Get scraped content statistics
 router.get('/scrape/stats',
-  authenticateToken,
+  authenticate,
   async (req, res) => {
     try {
       const { data: contentCount } = await req.supabase

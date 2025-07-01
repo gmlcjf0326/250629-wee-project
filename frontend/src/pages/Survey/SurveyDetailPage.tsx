@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import Layout from '../../components/layout/Layout';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
@@ -279,34 +278,34 @@ export const SurveyDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="container-custom py-8">
+      <div className="page-wrapper">
+        <div className="content-wide">
           <div className="text-center py-12">
             <div className="spinner mx-auto mb-4"></div>
             <p className="text-gray-500">설문조사를 불러오는 중...</p>
           </div>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   if (!survey) {
     return (
-      <Layout>
-        <div className="container-custom py-8">
+      <div className="page-wrapper">
+        <div className="content-wide">
           <div className="text-center py-12">
             <p className="text-gray-500">설문조사를 찾을 수 없습니다.</p>
           </div>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   const progress = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
-    <Layout>
-      <div className="container-custom py-8">
+    <div className="page-wrapper">
+      <div className="content-wide">
         <div className="max-w-3xl mx-auto">
           {/* Survey Header */}
           <div className="bg-white rounded-2xl shadow-soft p-8 mb-8">
@@ -335,7 +334,7 @@ export const SurveyDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Login Required Notice for Anonymous Users */}
+          {/* Anonymous Participation Notice */}
           {!user && (
             <div className="bg-blue-50 rounded-2xl p-6 mb-6">
               <div className="flex items-start">
@@ -343,25 +342,20 @@ export const SurveyDetailPage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">설문조사 참여 안내</h3>
-                  <p className="text-blue-800 mb-4">
-                    본 설문조사는 로그인된 사용자만 참여할 수 있습니다. 정확한 통계를 위해 중복 참여를 방지하고 있습니다.
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2">익명 참여 안내</h3>
+                  <p className="text-blue-800 mb-3">
+                    현재 로그인하지 않은 상태입니다. 익명으로 설문조사에 참여하실 수 있습니다.
                   </p>
-                  <div className="flex gap-3">
-                    <Link to="/login" className="btn-primary btn-sm">
-                      로그인하고 참여하기
-                    </Link>
-                    <Link to="/register" className="btn-secondary btn-sm">
-                      회원가입
-                    </Link>
-                  </div>
+                  <p className="text-sm text-blue-700">
+                    로그인하시면 설문 참여 기록을 확인하실 수 있습니다.
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Question Card */}
-          {questions.length > 0 && user && (
+          {questions.length > 0 && (
             <div className="bg-white rounded-2xl shadow-soft p-8 mb-8">
               <div className="mb-6">
                 <div className="flex items-start mb-4">
@@ -449,6 +443,6 @@ export const SurveyDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 };

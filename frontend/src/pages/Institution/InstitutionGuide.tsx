@@ -89,8 +89,8 @@ const InstitutionGuide: React.FC = () => {
   ];
 
   return (
-    <div className="container-custom py-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="page-wrapper">
+      <div className="content-wide">
         {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">이용안내</h1>

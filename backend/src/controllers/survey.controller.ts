@@ -1,105 +1,123 @@
 import { Request, Response } from 'express';
-import databaseService from '../services/database.service';
+import surveyService from '../services/survey.service';
+import { asyncHandler } from '../utils/asyncHandler';
 
 export const surveyController = {
-  // Get all active surveys
-  async getActiveSurveys(_req: Request, res: Response) {
-    try {
-      const surveys = await databaseService.getActiveSurveys();
-      return res.json({
-        success: true,
-        data: surveys
-      });
-    } catch (error: any) {
-      return res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to fetch surveys'
-      });
-    }
-  },
+  // Get all surveys
+  getSurveys: asyncHandler(async (req: Request, res: Response) => {
+    const { status } = req.query;
+    const userId = (req as any).user?.id;
+    
+    const surveys = await surveyService.getSurveys(status as string, userId);
+
+    res.json({
+      success: true,
+      data: surveys
+    });
+  }),
 
   // Get survey by ID
-  async getSurveyById(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const survey = await databaseService.getSurveyById(id);
-      
-      if (!survey) {
-        return res.status(404).json({
-          success: false,
-          message: 'Survey not found'
-        });
-      }
+  getSurveyById: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const survey = await surveyService.getSurveyById(id);
 
-      return res.json({
-        success: true,
-        data: survey
-      });
-    } catch (error: any) {
-      return res.status(500).json({
+    if (!survey) {
+      return res.status(404).json({
         success: false,
-        message: error.message || 'Failed to fetch survey'
+        message: 'Survey not found'
       });
     }
-  },
+
+    res.json({
+      success: true,
+      data: survey
+    });
+  }),
+
+  // Create survey (admin)
+  createSurvey: asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id;
+    const { survey, questions } = req.body;
+
+    const newSurvey = await surveyService.createSurvey(survey, questions, userId);
+
+    res.status(201).json({
+      success: true,
+      data: newSurvey,
+      message: 'Survey created successfully'
+    });
+  }),
+
+  // Update survey (admin)
+  updateSurvey: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { survey, questions } = req.body;
+
+    const updatedSurvey = await surveyService.updateSurvey(id, survey, questions);
+
+    res.json({
+      success: true,
+      data: updatedSurvey,
+      message: 'Survey updated successfully'
+    });
+  }),
+
+  // Delete survey (admin)
+  deleteSurvey: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    
+    await surveyService.deleteSurvey(id);
+
+    res.json({
+      success: true,
+      message: 'Survey deleted successfully'
+    });
+  }),
 
   // Submit survey response
-  async submitSurveyResponse(req: Request, res: Response) {
-    try {
-      const { surveyId } = req.params;
-      const { respondentId, respondentInfo, answers } = req.body;
+  submitResponse: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { answers } = req.body;
+    const userId = (req as any).user?.id;
+    const ipAddress = req.ip;
+    const userAgent = req.headers['user-agent'];
 
-      // Validate survey exists and is active
-      const survey = await databaseService.getSurveyById(surveyId);
-      if (!survey || !survey.isActive) {
-        return res.status(404).json({
-          success: false,
-          message: 'Survey not found or inactive'
-        });
-      }
+    const response = await surveyService.submitResponse(
+      id, 
+      answers, 
+      userId, 
+      ipAddress, 
+      userAgent
+    );
 
-      // Check if survey period is valid
-      const now = new Date();
-      if (survey.startDate && new Date(survey.startDate) > now) {
-        return res.status(400).json({
-          success: false,
-          message: 'Survey has not started yet'
-        });
-      }
-      if (survey.endDate && new Date(survey.endDate) < now) {
-        return res.status(400).json({
-          success: false,
-          message: 'Survey has ended'
-        });
-      }
+    res.status(201).json({
+      success: true,
+      data: response,
+      message: 'Response submitted successfully'
+    });
+  }),
 
-      // Create survey response
-      const response = await databaseService.createSurveyResponse({
-        surveyId,
-        respondentId,
-        respondentInfo,
-        answers,
-        isComplete: true,
-        submittedAt: new Date()
-      });
+  // Get survey responses (admin)
+  getSurveyResponses: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    
+    const responses = await surveyService.getSurveyResponses(id);
 
-      if (!response) {
-        throw new Error('Failed to save survey response');
-      }
+    res.json({
+      success: true,
+      data: responses
+    });
+  }),
 
-      return res.status(201).json({
-        success: true,
-        message: 'Survey response submitted successfully',
-        data: {
-          id: response.id,
-          submittedAt: response.submittedAt
-        }
-      });
-    } catch (error: any) {
-      return res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to submit survey response'
-      });
-    }
-  }
+  // Get survey statistics (admin)
+  getSurveyStatistics: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    
+    const statistics = await surveyService.getSurveyStatistics(id);
+
+    res.json({
+      success: true,
+      data: statistics
+    });
+  })
 };

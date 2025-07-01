@@ -116,7 +116,7 @@ const HomePage: React.FC = () => {
   ];
   
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    <div className="page-wrapper min-h-screen overflow-x-hidden">
       {/* Hero Section with Parallax */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
         {/* Parallax Background */}
@@ -131,7 +131,7 @@ const HomePage: React.FC = () => {
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-wee-purple/10 rounded-full blur-3xl"></div>
         </motion.div>
         
-        <div className="container-custom relative z-10">
+        <div className="content-wide relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div 
               initial={{ opacity: 0, x: -50 }}
@@ -253,7 +253,7 @@ const HomePage: React.FC = () => {
 
       {/* Statistics Section */}
       <section className="section bg-gradient-to-b from-white to-gray-50" ref={statsRef}>
-        <div className="container-custom">
+        <div className="content-wide">
           <motion.div 
             className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
@@ -325,7 +325,7 @@ const HomePage: React.FC = () => {
 
       {/* Service Showcase Section */}
       <section className="section bg-white">
-        <div className="container-custom">
+        <div className="content-wide">
           <motion.div 
             className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
@@ -538,7 +538,7 @@ const HomePage: React.FC = () => {
       
       {/* Testimonials Carousel */}
       <section className="section bg-gradient-to-b from-gray-50 to-white">
-        <div className="container-custom">
+        <div className="content-wide">
           <motion.div 
             className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
@@ -595,7 +595,7 @@ const HomePage: React.FC = () => {
       
       {/* Partner Logos Section */}
       <section className="section bg-white">
-        <div className="container-custom">
+        <div className="content-wide">
           <motion.div 
             className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
@@ -645,7 +645,7 @@ const HomePage: React.FC = () => {
             backgroundSize: "60px 60px"
           }}
         />
-        <div className="container-custom text-center relative z-10">
+        <div className="content-wide text-center relative z-10">
           <motion.h2 
             className="text-4xl lg:text-5xl font-bold mb-4"
             initial={{ opacity: 0, y: 20 }}
@@ -695,7 +695,7 @@ const HomePage: React.FC = () => {
       
       {/* Secondary CTA Section */}
       <section className="section bg-gradient-to-b from-gray-50 to-white">
-        <div className="container-custom">
+        <div className="content-wide">
           <div className="bg-gradient-to-r from-wee-purple to-wee-coral rounded-3xl p-8 md:p-12 text-white relative overflow-hidden">
             <div className="absolute inset-0 bg-black/10"></div>
             <div className="relative z-10 grid md:grid-cols-2 gap-8 items-center">
@@ -729,7 +729,7 @@ const HomePage: React.FC = () => {
 
       {/* Quick Links Section */}
       <section className="section bg-wee-bg-light">
-        <div className="container-custom">
+        <div className="content-wide">
           <div className="grid md:grid-cols-3 gap-8">
             <div className="card">
               <div className="card-body">

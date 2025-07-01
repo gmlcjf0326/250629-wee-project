@@ -192,8 +192,8 @@ const ResourcesCases: React.FC = () => {
   };
 
   return (
-    <div className="container-custom py-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="page-wrapper">
+      <div className="content-wide">
         {/* Page Header */}
         <div className="text-center mb-12">
           <motion.div

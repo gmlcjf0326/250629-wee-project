@@ -24,6 +24,13 @@ export const LineChart: React.FC<LineChartProps> = ({
   height = 300,
   options = {},
 }) => {
+  // Handle undefined or empty datasets
+  if (!datasets || datasets.length === 0) {
+    return <div style={{ height: `${height}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p>No data available</p>
+    </div>;
+  }
+  
   const colors = getChartColors(datasets.length);
 
   const chartData = {

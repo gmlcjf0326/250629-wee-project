@@ -1,130 +1,174 @@
-import { Request, Response, NextFunction } from 'express';
-import { Contact } from '../types';
+import { Request, Response } from 'express';
+import contactService from '../services/contact.service';
+import { asyncHandler } from '../utils/asyncHandler';
 
-// Mock storage - will be replaced with database
-const contacts: Contact[] = [];
+export const contactController = {
+  // Create new contact inquiry
+  createContact: asyncHandler(async (req: Request, res: Response) => {
+    const { name, email, phone, title, message, category } = req.body;
 
-export const createContact = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { name, email, phone, subject, message } = req.body;
-
-    // Basic validation
-    if (!name || !email || !subject || !message) {
+    // Validation
+    if (!name || !email || !title || !message || !category) {
       return res.status(400).json({
         success: false,
-        message: 'Required fields: name, email, subject, message'
+        message: '필수 항목을 모두 입력해주세요.'
       });
     }
 
-    const newContact: Contact = {
-      id: Date.now().toString(),
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: '올바른 이메일 주소를 입력해주세요.'
+      });
+    }
+
+    const contact = await contactService.createContact({
       name,
       email,
       phone,
-      subject,
+      title,
       message,
-      status: 'pending',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      category,
+      ip_address: req.ip,
+      user_agent: req.get('user-agent')
+    });
+
+    res.status(201).json({
+      success: true,
+      message: '문의가 성공적으로 접수되었습니다.',
+      data: contact
+    });
+  }),
+
+  // Get all contacts (admin)
+  getContacts: asyncHandler(async (req: Request, res: Response) => {
+    const query = {
+      status: req.query.status as string,
+      category: req.query.category as string,
+      assigned_to: req.query.assigned_to as string,
+      search: req.query.search as string,
+      from_date: req.query.from_date as string,
+      to_date: req.query.to_date as string,
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 20
     };
 
-    contacts.push(newContact);
+    const result = await contactService.getContacts(query);
 
-    return res.status(201).json({
+    res.json({
       success: true,
-      message: 'Contact inquiry submitted successfully',
-      data: newContact
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getContacts = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    // TODO: Implement admin authentication check
-    
-    const { status, page = 1, limit = 10 } = req.query;
-    
-    let filteredContacts = contacts;
-    
-    if (status) {
-      filteredContacts = contacts.filter(c => c.status === status);
-    }
-    
-    // Pagination
-    const startIndex = (Number(page) - 1) * Number(limit);
-    const endIndex = startIndex + Number(limit);
-    const paginatedContacts = filteredContacts.slice(startIndex, endIndex);
-    
-    return res.json({
-      success: true,
-      data: paginatedContacts,
+      data: result.contacts,
       pagination: {
-        total: filteredContacts.length,
-        page: Number(page),
-        limit: Number(limit),
-        pages: Math.ceil(filteredContacts.length / Number(limit))
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages
       }
     });
-  } catch (error) {
-    next(error);
-  }
-};
+  }),
 
-export const getContactById = async (req: Request, res: Response, next: NextFunction) => {
-  try {
+  // Get single contact
+  getContact: asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const contact = contacts.find(c => c.id === id);
-    
+    const contact = await contactService.getContactById(id);
+
     if (!contact) {
       return res.status(404).json({
         success: false,
-        message: 'Contact not found'
+        message: '문의를 찾을 수 없습니다.'
       });
     }
-    
-    return res.json({
+
+    res.json({
       success: true,
       data: contact
     });
-  } catch (error) {
-    next(error);
-  }
-};
+  }),
 
-export const updateContactStatus = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    // TODO: Implement admin authentication check
-    
+  // Update contact
+  updateContact: asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { status } = req.body;
-    
-    if (!['pending', 'reviewed', 'resolved'].includes(status)) {
+    const { status, assigned_to } = req.body;
+
+    const updates: any = {};
+    if (status) updates.status = status;
+    if (assigned_to) updates.assigned_to = assigned_to;
+
+    const contact = await contactService.updateContact(id, updates);
+
+    res.json({
+      success: true,
+      message: '문의가 업데이트되었습니다.',
+      data: contact
+    });
+  }),
+
+  // Reply to contact
+  replyToContact: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { message } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!message) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid status. Must be: pending, reviewed, or resolved'
+        message: '답변 내용을 입력해주세요.'
       });
     }
-    
-    const contactIndex = contacts.findIndex(c => c.id === id);
-    
-    if (contactIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Contact not found'
-      });
-    }
-    
-    contacts[contactIndex].status = status;
-    contacts[contactIndex].updatedAt = new Date();
-    
-    return res.json({
-      success: true,
-      message: 'Contact status updated successfully',
-      data: contacts[contactIndex]
+
+    const contact = await contactService.replyToContact(id, {
+      message,
+      userId: userId || 'admin'
     });
-  } catch (error) {
-    next(error);
-  }
+
+    res.json({
+      success: true,
+      message: '답변이 전송되었습니다.',
+      data: contact
+    });
+  }),
+
+  // Delete contact
+  deleteContact: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    await contactService.deleteContact(id);
+
+    res.json({
+      success: true,
+      message: '문의가 삭제되었습니다.'
+    });
+  }),
+
+  // Get contact statistics
+  getContactStats: asyncHandler(async (req: Request, res: Response) => {
+    const stats = await contactService.getContactStats();
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  }),
+
+  // Assign contact to staff
+  assignContact: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: '담당자를 선택해주세요.'
+      });
+    }
+
+    const contact = await contactService.assignContact(id, userId);
+
+    res.json({
+      success: true,
+      message: '담당자가 지정되었습니다.',
+      data: contact
+    });
+  })
 };

@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { supabaseAdmin, isSupabaseConfigured } from '../config/supabase';
+import { supabase, supabaseAdmin, isSupabaseConfigured } from '../config/supabase';
 import { 
   User, 
   LoginRequest, 
@@ -32,11 +32,19 @@ class AuthService {
         user_metadata: {
           full_name: data.fullName,
           phone: data.phone,
-          organization: data.organization
+          organization: data.organization,
+          position: data.position,
+          purpose: data.purpose
         }
       });
 
       if (authError) {
+        // Check for specific Supabase errors
+        if (authError.message?.includes('duplicate key value') || 
+            authError.message?.includes('already registered') ||
+            authError.code === '23505') { // PostgreSQL unique violation
+          throw new Error('Email already registered');
+        }
         throw authError;
       }
 
@@ -46,7 +54,8 @@ class AuthService {
         .update({
           full_name: data.fullName,
           phone: data.phone,
-          organization: data.organization
+          organization: data.organization,
+          position: data.position
         })
         .eq('id', authData.user.id)
         .select()
@@ -77,8 +86,8 @@ class AuthService {
     }
 
     try {
-      // Sign in with Supabase
-      const { data: authData, error: authError } = await supabaseAdmin!.auth.signInWithPassword({
+      // Sign in with Supabase using regular client for user authentication
+      const { data: authData, error: authError } = await supabase!.auth.signInWithPassword({
         email: data.email,
         password: data.password
       });
@@ -215,8 +224,8 @@ class AuthService {
         .eq('user_id', userId)
         .eq('token', token);
 
-      // Sign out from Supabase
-      await supabaseAdmin!.auth.signOut();
+      // Note: signOut() is a client-side method and not available on admin client
+      // Session invalidation is handled by deleting from user_sessions table above
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
@@ -267,6 +276,93 @@ class AuthService {
     } catch (error) {
       console.error('Get user error:', error);
       return null;
+    }
+  }
+
+  // Update user profile
+  async updateProfile(userId: string, profileData: {
+    fullName?: string;
+    phone?: string;
+    organization?: string;
+    department?: string;
+    position?: string;
+  }): Promise<User | null> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured');
+    }
+
+    try {
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+
+      if (profileData.fullName !== undefined) {
+        updateData.full_name = profileData.fullName;
+      }
+      if (profileData.phone !== undefined) {
+        updateData.phone = profileData.phone;
+      }
+      if (profileData.organization !== undefined) {
+        updateData.organization = profileData.organization;
+      }
+      if (profileData.department !== undefined) {
+        updateData.department = profileData.department;
+      }
+      if (profileData.position !== undefined) {
+        updateData.position = profileData.position;
+      }
+
+      const { data: user, error } = await supabaseAdmin!
+        .from('users')
+        .update(updateData)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return this.mapDatabaseUserToUser(user);
+    } catch (error) {
+      console.error('Update profile error:', error);
+      throw error;
+    }
+  }
+
+  // Check email availability
+  async checkEmailAvailability(email: string): Promise<boolean> {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured');
+    }
+
+    try {
+      // First check in auth.users via admin API
+      const { data: authUsers, error: authError } = await supabaseAdmin!.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Error checking auth users:', authError);
+        // Fallback to checking users table
+        const { data, error } = await supabaseAdmin!
+          .from('users')
+          .select('id')
+          .eq('email', email.toLowerCase())
+          .maybeSingle();
+
+        // If no user found, email is available
+        return !data;
+      }
+
+      // Check if email exists in auth users
+      const emailExists = authUsers.users.some(user => 
+        user.email?.toLowerCase() === email.toLowerCase()
+      );
+
+      return !emailExists;
+    } catch (error) {
+      console.error('Check email availability error:', error);
+      // In case of error, assume email is not available to prevent duplicate registrations
+      return false;
     }
   }
 

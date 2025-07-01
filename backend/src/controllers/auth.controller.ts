@@ -7,9 +7,25 @@ export const authController = {
   async register(req: Request, res: Response) {
     try {
       const data: RegisterRequest = req.body;
+      
+      console.log('Registration attempt:', { 
+        email: data.email, 
+        hasPassword: !!data.password,
+        passwordLength: data.password?.length,
+        fullName: data.fullName,
+        phone: data.phone,
+        organization: data.organization,
+        position: data.position,
+        purpose: data.purpose
+      });
 
       // Validate required fields
       if (!data.email || !data.password || !data.fullName) {
+        console.error('Missing required fields:', { 
+          hasEmail: !!data.email, 
+          hasPassword: !!data.password, 
+          hasFullName: !!data.fullName 
+        });
         return res.status(400).json({
           success: false,
           message: 'Email, password, and full name are required'
@@ -44,7 +60,10 @@ export const authController = {
       console.error('Registration error:', error);
       
       // Handle specific error cases
-      if (error.message?.includes('already registered')) {
+      if (error.message?.includes('already registered') ||
+          error.message?.includes('Email already registered') ||
+          error.message?.includes('duplicate key') ||
+          error.code === '23505') {
         return res.status(409).json({
           success: false,
           message: 'Email already registered'
@@ -208,11 +227,25 @@ export const authController = {
       const { fullName, phone, organization, department, position } = req.body;
 
       // Update user profile in database
-      // TODO: Implement profile update in auth service
+      const updatedUser = await authService.updateProfile(req.user.id, {
+        fullName,
+        phone,
+        organization,
+        department,
+        position
+      });
+
+      if (!updatedUser) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to update profile'
+        });
+      }
 
       return res.json({
         success: true,
-        message: 'Profile updated successfully'
+        message: 'Profile updated successfully',
+        data: { user: updatedUser }
       });
     } catch (error: any) {
       console.error('Update profile error:', error);
@@ -249,6 +282,37 @@ export const authController = {
       return res.status(500).json({
         success: false,
         message: error.message || 'Token verification failed'
+      });
+    }
+  },
+
+  // Check email availability
+  async checkEmail(req: Request, res: Response) {
+    try {
+      const { email } = req.query;
+
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is required'
+        });
+      }
+
+      const isAvailable = await authService.checkEmailAvailability(email);
+
+      return res.json({
+        success: true,
+        data: {
+          available: isAvailable,
+          message: isAvailable ? 'Email is available' : 'Email is already registered'
+        }
+      });
+    } catch (error: any) {
+      console.error('Check email error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to check email availability'
       });
     }
   }

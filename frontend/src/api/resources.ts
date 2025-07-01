@@ -3,16 +3,16 @@ import apiClient from './client';
 export interface Resource {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   category: string;
-  type: string;
-  file_url: string;
-  file_size: number;
-  download_count: number;
-  tags: string[];
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  type: 'manual' | 'program' | 'case';
+  file_url?: string;
+  file_size?: number;
+  download_count?: number;
+  tags?: string[];
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
   uploaded_by?: string;
   version?: string;
   file_name?: string;
@@ -110,7 +110,7 @@ export const resourcesAPI = {
 
   // Download resource (increment download count)
   downloadResource: async (id: string) => {
-    const response = await apiClient.post(`/resources/${id}/download`);
+    const response = await apiClient.get(`/resources/${id}/download`);
     return response.data.data;
   },
 
@@ -135,8 +135,9 @@ export const resourcesAPI = {
   },
 
   // Get resource categories
-  getCategories: async () => {
-    const response = await apiClient.get('/resources/categories');
+  getCategories: async (type?: string) => {
+    const params = type ? { type } : {};
+    const response = await apiClient.get('/resources/categories', { params });
     return response.data.data;
   }
 };

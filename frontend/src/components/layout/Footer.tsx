@@ -34,7 +34,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="bg-gradient-to-b from-gray-50 to-gray-100 border-t border-gray-200 mt-auto">
       {/* Main Footer */}
-      <div className="container-custom py-12">
+      <div className="content-wide py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           {/* Logo & Description */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1">
@@ -148,7 +148,7 @@ const Footer: React.FC = () => {
 
       {/* Bottom Bar */}
       <div className="bg-gray-900 text-white py-4">
-        <div className="container-custom">
+        <div className="content-wide">
           <div className="flex flex-col md:flex-row justify-between items-center text-sm">
             <p className="text-gray-400">
               © {currentYear} Wee 프로젝트. All rights reserved.

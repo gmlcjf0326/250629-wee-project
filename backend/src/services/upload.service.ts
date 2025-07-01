@@ -130,7 +130,7 @@ class UploadService {
       }
 
       // Delete from local storage
-      if (fs.existsSync(fileRecord.filePath)) {
+      if (fileRecord.filePath && fs.existsSync(fileRecord.filePath)) {
         fs.unlinkSync(fileRecord.filePath);
       }
 

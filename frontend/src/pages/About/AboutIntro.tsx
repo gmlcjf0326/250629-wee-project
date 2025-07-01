@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 
 const AboutIntro: React.FC = () => {
   return (
-    <div className="container-custom py-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="page-wrapper">
+      <div className="content-container">
         {/* Page Header */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}

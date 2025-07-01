@@ -92,6 +92,8 @@ export interface RegisterRequest {
   fullName: string;
   phone?: string;
   organization?: string;
+  position?: string;
+  purpose?: string;
 }
 
 export interface AuthResponse {
