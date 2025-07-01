@@ -1,14 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import KakaoMap from '../../components/map/KakaoMap';
 
 interface Institution {
   id: number;
   name: string;
-  type: 'class' | 'center' | 'school';
+  type: 'class' | 'center' | 'school' | 'home';
   address: string;
   phone: string;
   lat: number;
   lng: number;
   services: string[];
+}
+
+interface MapMarker {
+  id: string;
+  position: {
+    lat: number;
+    lng: number;
+  };
+  title: string;
+  type: 'wee-class' | 'wee-center' | 'wee-school' | 'wee-home';
+  address?: string;
+  phone?: string;
+  description?: string;
 }
 
 const InstitutionMap: React.FC = () => {
@@ -27,9 +41,10 @@ const InstitutionMap: React.FC = () => {
     { value: 'class', label: 'Wee 클래스', icon: '🏫' },
     { value: 'center', label: 'Wee 센터', icon: '🏛️' },
     { value: 'school', label: 'Wee 스쿨', icon: '🎓' },
+    { value: 'home', label: '가정형 Wee센터', icon: '🏠' },
   ];
 
-  // Dummy data for institutions
+  // Sample Wee institutions data with real coordinates
   const institutions: Institution[] = [
     {
       id: 1,
@@ -61,7 +76,75 @@ const InstitutionMap: React.FC = () => {
       lng: 126.9528,
       services: ['위탁교육', '치유프로그램', '직업교육'],
     },
+    {
+      id: 4,
+      name: '부산시교육청 Wee 센터',
+      type: 'center',
+      address: '부산광역시 북구 화명대로 169',
+      phone: '051-860-0345',
+      lat: 35.2100,
+      lng: 129.0403,
+      services: ['개인상담', '집단상담', '심리검사', '위기개입'],
+    },
+    {
+      id: 5,
+      name: '대구중학교 Wee 클래스',
+      type: 'class',
+      address: '대구광역시 중구 동덕로 10',
+      phone: '053-231-5678',
+      lat: 35.8714,
+      lng: 128.5911,
+      services: ['개인상담', '또래상담', '학부모상담'],
+    },
+    {
+      id: 6,
+      name: '경기도 Wee 스쿨',
+      type: 'school',
+      address: '경기도 성남시 분당구 야탑로 205',
+      phone: '031-780-2595',
+      lat: 37.3595,
+      lng: 127.1052,
+      services: ['위탁교육', '치유프로그램', '직업교육', '대안교실'],
+    },
+    {
+      id: 7,
+      name: '서울 가정형 Wee센터',
+      type: 'home',
+      address: '서울특별시 송파구 올림픽로 435',
+      phone: '02-2147-3900',
+      lat: 37.5219,
+      lng: 127.1275,
+      services: ['가정형 대안교육', '치유상담', '생활지도', '진로상담'],
+    },
+    {
+      id: 8,
+      name: '인천 가정형 Wee센터',
+      type: 'home',
+      address: '인천광역시 부평구 부평대로 168',
+      phone: '032-540-1300',
+      lat: 37.5074,
+      lng: 126.7217,
+      services: ['가정형 위탁교육', '개별상담', '멘토링', '생활지원'],
+    },
   ];
+
+  // Convert institutions to map markers with memoization
+  const mapMarkers: MapMarker[] = useMemo(() => 
+    institutions.map(inst => ({
+      id: inst.id.toString(),
+      position: {
+        lat: inst.lat,
+        lng: inst.lng
+      },
+      title: inst.name,
+      type: inst.type === 'class' ? 'wee-class' : 
+            inst.type === 'center' ? 'wee-center' : 
+            inst.type === 'school' ? 'wee-school' :
+            'wee-home',
+      address: inst.address,
+      phone: inst.phone,
+      description: inst.services.join(', ')
+    })), []);
 
   const filteredInstitutions = institutions.filter(inst => {
     const matchesType = selectedType === 'all' || inst.type === selectedType;
@@ -73,8 +156,9 @@ const InstitutionMap: React.FC = () => {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'class': return 'bg-blue-100 text-blue-700';
-      case 'center': return 'bg-green-100 text-green-700';
+      case 'center': return 'bg-emerald-100 text-emerald-700';
       case 'school': return 'bg-purple-100 text-purple-700';
+      case 'home': return 'bg-amber-100 text-amber-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -84,6 +168,7 @@ const InstitutionMap: React.FC = () => {
       case 'class': return 'Wee 클래스';
       case 'center': return 'Wee 센터';
       case 'school': return 'Wee 스쿨';
+      case 'home': return '가정형 Wee센터';
       default: return '';
     }
   };
@@ -150,18 +235,23 @@ const InstitutionMap: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Map Area */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-soft p-6 h-[600px]">
-              <div className="bg-gray-100 rounded-xl h-full flex items-center justify-center">
-                <div className="text-center">
-                  <svg className="w-24 h-24 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                  </svg>
-                  <p className="text-gray-500 text-lg">지도 영역</p>
-                  <p className="text-gray-400 text-sm mt-2">
-                    실제 구현 시 카카오맵 또는 네이버맵 API 연동
-                  </p>
-                </div>
-              </div>
+            <div className="bg-white rounded-2xl shadow-soft p-6">
+              <KakaoMap
+                markers={mapMarkers}
+                center={useMemo(() => 
+                  selectedInstitution ? { lat: selectedInstitution.lat, lng: selectedInstitution.lng } : undefined, 
+                  [selectedInstitution]
+                )}
+                level={7}
+                className="h-[550px]"
+                selectedMarkerId={selectedInstitution?.id.toString()}
+                onMarkerClick={useMemo(() => (marker: MapMarker) => {
+                  const institution = institutions.find(inst => inst.id.toString() === marker.id);
+                  if (institution) {
+                    setSelectedInstitution(institution);
+                  }
+                }, [])}
+              />
             </div>
           </div>
 
@@ -251,22 +341,26 @@ const InstitutionMap: React.FC = () => {
         )}
 
         {/* Quick Stats */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="bg-white rounded-xl shadow-soft p-6 text-center">
-            <div className="text-3xl font-bold text-wee-main mb-2">5,000+</div>
-            <p className="text-gray-600">Wee 클래스</p>
+            <div className="text-3xl font-bold text-blue-600 mb-2">5,000+</div>
+            <p className="text-gray-600 text-sm">Wee 클래스</p>
           </div>
           <div className="bg-white rounded-xl shadow-soft p-6 text-center">
-            <div className="text-3xl font-bold text-wee-blue mb-2">200+</div>
-            <p className="text-gray-600">Wee 센터</p>
+            <div className="text-3xl font-bold text-emerald-600 mb-2">200+</div>
+            <p className="text-gray-600 text-sm">Wee 센터</p>
           </div>
           <div className="bg-white rounded-xl shadow-soft p-6 text-center">
-            <div className="text-3xl font-bold text-wee-purple mb-2">15</div>
-            <p className="text-gray-600">Wee 스쿨</p>
+            <div className="text-3xl font-bold text-purple-600 mb-2">15</div>
+            <p className="text-gray-600 text-sm">Wee 스쿨</p>
           </div>
           <div className="bg-white rounded-xl shadow-soft p-6 text-center">
-            <div className="text-3xl font-bold text-wee-green mb-2">전국</div>
-            <p className="text-gray-600">서비스 지역</p>
+            <div className="text-3xl font-bold text-amber-600 mb-2">10+</div>
+            <p className="text-gray-600 text-sm">가정형 Wee센터</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-soft p-6 text-center">
+            <div className="text-3xl font-bold text-gray-600 mb-2">전국</div>
+            <p className="text-gray-600 text-sm">서비스 지역</p>
           </div>
         </div>
       </div>

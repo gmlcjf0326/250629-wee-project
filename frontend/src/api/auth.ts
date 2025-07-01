@@ -6,10 +6,6 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface EPKILoginRequest {
-  certData: string;
-  signature: string;
-}
 
 export interface RegisterRequest {
   email: string;
@@ -40,11 +36,6 @@ export const authAPI = {
     return response.data.data;
   },
 
-  // Login with EPKI certificate
-  loginWithEPKI: async (data: EPKILoginRequest): Promise<AuthResponse> => {
-    const response = await apiClient.post('/auth/login/epki', data);
-    return response.data.data;
-  },
 
   // Logout
   logout: async (): Promise<void> => {

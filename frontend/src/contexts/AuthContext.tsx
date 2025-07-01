@@ -15,7 +15,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  loginWithEPKI: (certData: string, signature: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
@@ -87,16 +86,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const loginWithEPKI = async (certData: string, signature: string) => {
-    try {
-      const result = await authAPI.loginWithEPKI({ certData, signature });
-      localStorage.setItem('accessToken', result.accessToken);
-      setUser(result.user);
-    } catch (error) {
-      console.error('EPKI login failed:', error);
-      throw error;
-    }
-  };
 
   const register = async (data: RegisterData) => {
     try {
@@ -136,7 +125,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated: !!user,
     isLoading,
     login,
-    loginWithEPKI,
     register,
     logout,
     updateProfile,

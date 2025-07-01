@@ -35,6 +35,7 @@ const Header: React.FC = () => {
       children: [
         { name: '이용안내', path: '/institution/guide' },
         { name: '지도 찾기', path: '/institution/map' },
+        { name: '가상 투어', path: '/tour' },
       ]
     },
     {

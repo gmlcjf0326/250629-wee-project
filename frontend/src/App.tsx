@@ -33,9 +33,10 @@ import { CommunityDetailPage } from './pages/Community/CommunityDetailPage';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
 import { LoginPage } from './pages/Auth/LoginPage';
 import { RegisterPage } from './pages/Auth/RegisterPage';
-import { EPKILoginPage } from './pages/Auth/EPKILoginPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 import ContactPage from './pages/Contact/ContactPage';
+import VirtualTour from './pages/Tour/VirtualTour';
+import MapTest from './pages/Test/MapTest';
 
 // Context
 import { AuthProvider } from './contexts/AuthContext';
@@ -162,6 +163,12 @@ function App() {
             {/* Contact */}
             <Route path="contact" element={<ContactPage />} />
             
+            {/* Virtual Tour */}
+            <Route path="tour" element={<VirtualTour />} />
+            
+            {/* Map Test - Debug */}
+            <Route path="test/map" element={<MapTest />} />
+            
             {/* Unauthorized */}
             <Route path="unauthorized" element={<UnauthorizedPage />} />
             
@@ -171,7 +178,6 @@ function App() {
           
           {/* Auth Routes - Outside of Layout */}
           <Route path="login" element={<LoginPage />} />
-          <Route path="login/epki" element={<EPKILoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           
           {/* Admin Routes */}

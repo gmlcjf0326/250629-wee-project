@@ -1,0 +1,326 @@
+.virtual-tour-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+  background: #000;
+}
+
+/* Show cursor when dialogue is open */
+.virtual-tour-container.dialogue-open {
+  cursor: default !important;
+}
+
+.virtual-tour-container.dialogue-open .canvas-container {
+  cursor: default !important;
+}
+
+.canvas-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  cursor: crosshair;
+}
+
+/* Custom cursor styles */
+.canvas-container canvas {
+  cursor: crosshair;
+}
+
+.canvas-container.pointer-locked canvas {
+  cursor: none;
+}
+
+.ui-overlay {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: white;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  max-width: 300px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ui-overlay h2 {
+  margin: 0 0 5px 0;
+  font-size: 24px;
+}
+
+.ui-overlay .subtitle {
+  font-size: 20px;
+  margin: 0 0 10px 0;
+}
+
+.ui-overlay p {
+  margin: 5px 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.ui-overlay .tip {
+  opacity: 0.8;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.dialogue-box {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  padding: 20px;
+  border-radius: 15px;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialogue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.dialogue-box h3 {
+  margin: 0;
+  color: #3b82f6;
+  font-size: 18px;
+  flex: 1;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.close-button:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.dialogue-content {
+  margin: 10px 0;
+  line-height: 1.8;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.dialogue-options {
+  margin: 10px 0;
+  max-height: 300px;
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding-bottom: 5px; /* Add padding to prevent hover flickering */
+}
+
+.dialogue-option {
+  background: #f0f0f0;
+  border: 2px solid #3b82f6;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
+  position: relative;
+}
+
+.dialogue-option:hover {
+  background: #3b82f6;
+  color: white;
+  transform: translateX(5px);
+}
+
+/* Prevent hover flickering at the bottom */
+.dialogue-option:last-child {
+  margin-bottom: 0;
+}
+
+.custom-question-container {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+.custom-question-container .divider {
+  margin: 5px 0;
+  font-size: 14px;
+  opacity: 0.8;
+  text-align: center;
+}
+
+.custom-question-input {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
+.custom-question-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.ask-button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+  width: 100%;
+  font-weight: 500;
+}
+
+.ask-button:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ask-button:active {
+  transform: translateY(0);
+}
+
+.interaction-prompt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Scrollbar styling for dialogue content */
+.dialogue-content::-webkit-scrollbar,
+.dialogue-options::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dialogue-content::-webkit-scrollbar-track,
+.dialogue-options::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.dialogue-content::-webkit-scrollbar-thumb,
+.dialogue-options::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.dialogue-content::-webkit-scrollbar-thumb:hover,
+.dialogue-options::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Floating text animation */
+@keyframes floatUp {
+  0% { 
+    opacity: 1; 
+    transform: translateY(0);
+  }
+  100% { 
+    opacity: 0; 
+    transform: translateY(-100px);
+  }
+}
+
+.floating-text {
+  position: absolute;
+  color: #ff0;
+  font-size: 24px;
+  font-weight: bold;
+  pointer-events: none;
+  animation: floatUp 2s ease-out forwards;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  z-index: 1000;
+}
+
+/* Loading animation */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(59, 130, 246, 0.3);
+  border-radius: 50%;
+  border-top-color: #3b82f6;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ui-overlay {
+    max-width: 250px;
+    padding: 10px;
+  }
+  
+  .ui-overlay h2 {
+    font-size: 20px;
+  }
+  
+  .ui-overlay p {
+    font-size: 12px;
+  }
+  
+  .dialogue-box {
+    width: 95%;
+    padding: 15px;
+    bottom: 10px;
+  }
+  
+  .dialogue-option {
+    padding: 10px;
+    font-size: 13px;
+  }
+}
